@@ -98,6 +98,19 @@ class TestData(unittest.TestCase):
         '''Test find_index function.'''
         with self.assertRaises(TruncateError):
             find_index(5, np.array([1, 2, 3, 4]), truncate=False)
+
+    def test_find_index_decreasing_gt_max_and_truncate_is_true_returns_0_false(self):
+        '''Test find_index function.'''
+        self.assertEqual(find_index(5, np.array([4, 3, 2, 1]), truncate=True), (0, False))
+    def test_find_index_decreasing_lt_min_and_truncate_is_true_returns_max_index_false(self):
+        '''Test find_index function.'''
+        self.assertEqual(find_index(0, np.array([4, 3, 2, 1]), truncate=True), (3, False))
+    def test_find_index_decreasing_on_range(self):
+        '''Test find_index function.'''
+        self.assertEqual(find_index(3, np.array([4, 3, 2, 1])), (1,))
+    def test_find_index_decreasing_interpolated_on_range(self):
+        '''Test find_index function.'''
+        self.assertEqual(find_index(2.5, np.array([4, 3, 2, 1]), interpolate=True), (1, 2))
     #endregion
 
     #region interpolate_2d tests.

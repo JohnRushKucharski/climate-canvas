@@ -31,10 +31,10 @@ def response(data: str = typer.Argument(..., help='Path to csv file.'),
     | yn  | zn0 | ... |...  | znn | \n
     \n
     '''
-    typer.echo('coming soon...')
+    # todo: use rich to add a better table and a progress bar.
     df = pd.read_csv(data)
     z = df.iloc[:, 1:].to_numpy(dtype=float)
     y = np.array(df.iloc[:, 0], dtype=float)
     x = np.array(df.columns.values[1:], dtype=float)
 
-    plot_response_surface(x, y, z, interpolate)
+    plot_response_surface(x, y, z, interpolate, (xlabel, ylabel, zlabel), title)

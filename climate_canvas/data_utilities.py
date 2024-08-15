@@ -142,24 +142,59 @@ def find_index(value: float, array: np.ndarray,
     '''
     if value in array:
         return (np.where(array == value)[0][0],) # first occurence.
-    # if not interpolate and not truncate:
-    #     raise ValueError(f'{value} not in {array}. Use interpolate=True or truncate=True.')
     if not is_interpolable(array):
         raise ValueError(f'''Interpolate and/or truncate not possible.
                          The array {array} must be numeric, sorted, and contain no nan values.''')
-    for i, val in enumerate(array):
-        # todo: I'm not sure this is working for descending arrays.
-        if value < val:
-            if i == 0: # value is less than min.
-                if not truncate:
-                    raise TruncateError(f'{value} not on domain of {array}. Use truncate=True.')
-                return (0, False)
-            if not interpolate:
-                raise InterpolateError(f'{value} not in {array}. Use interpolate=True.')
-            return (i-1, i)
-    if not truncate: # value is greater than max.
-        raise TruncateError(f'{value} not on domain of {array}. Use truncate=True.')
-    return (len(array) - 1, False)
+    if is_ascending(array):
+        if value < array[0]:
+            if not truncate:
+                raise TruncateError(f'{value} not on domain of {array}. Use truncate=True.')
+            return (0, False)
+        if value > array[-1]:
+            if not truncate:
+                raise TruncateError(f'{value} not on domain of {array}. Use truncate=True.')
+            return (len(array) - 1, False)
+        # find closest pair of values.
+        if not interpolate:
+            raise InterpolateError(f'{value} not in {array}. Use interpolate=True.')
+        for i, val in enumerate(array):
+            if value < val:
+                return (i-1, i)
+    else: # descending array.
+        if value > array[0]:
+            if not truncate:
+                raise TruncateError(f'{value} not on domain of {array}. Use truncate=True.')
+            return (0, False)
+        if value < array[-1]:
+            if not truncate:
+                raise TruncateError(f'{value} not on domain of {array}. Use truncate=True.')
+            return (len(array) - 1, False)
+        # find closest pair of values.
+        if not interpolate:
+            raise InterpolateError(f'{value} not in {array}. Use interpolate=True.')
+        for i, val in enumerate(array):
+            if value > val:
+                return (i-1, i)
+    raise ValueError(f'Something went wrong finding value {value} in {array}.')
+    # # find closest pair of values.
+    # if not interpolate:
+    #     raise InterpolateError(f'{value} not in {array}. Use interpolate=True.')
+    # else:
+    #     for i, val in enumerate(array):
+    #         if value < val:
+    #             return (i-1, i)
+    # # for i, val in enumerate(array):
+    # #     if value < val:
+    #         if i == 0: # value is less than min.
+    #             if not truncate:
+    #                 raise TruncateError(f'{value} not on domain of {array}. Use truncate=True.')
+    #             return (0, False)
+    #         if not interpolate:
+    #             raise InterpolateError(f'{value} not in {array}. Use interpolate=True.')
+    #         return (i-1, i)
+    # if not truncate: # value is greater than max.
+    #     raise TruncateError(f'{value} not on domain of {array}. Use truncate=True.')
+    # return (len(array) - 1, False)
 
 def find_z(xy: tuple[float, float],
            xs: np.ndarray, ys: np.ndarray, zs: np.ndarray,

@@ -1,5 +1,4 @@
 '''Plotting utilities for climate impact data.'''
-import numpy as np
 from matplotlib import pyplot as plt
 
 from climate_canvas.data_utilities import evenly_space
@@ -10,23 +9,34 @@ def plot_response_surface(xs, ys, zs,
                           title: str = 'Response Surface'
                           ) -> None:
     '''Plot response surface from climate impact data.'''
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10, 10))
     if interpolate: # and
-        x, y, z = evenly_space(xs, ys, zs, None, (100, 100))
+        xs, ys, zs = evenly_space(xs, ys, zs, None, (100, 100))
+    extent = (xs.min(), xs.max(), ys.min(), ys.max())
+    im = ax.imshow(zs, extent=extent, aspect='auto')
+    # todo: contour lines are rotated, this has happened to others.
+    ax.contour(zs, extent=extent, colors='black')
+    fig.colorbar(im, ax=ax)
+    ax.set_xlim(xs.min(), xs.max())
+    ax.set_ylim(ys.min(), ys.max())
+    ax.set_xlabel(labels[0])
+    ax.set_ylabel(labels[1])
+    ax.set_title(title)
+    plt.show()
 
-        im = ax.imshow(z, extent=(x.min(), x.max(), y.min(), y.max()))
-        ax.contour(z, colors='black')
-        fig.colorbar(im, ax=ax)
-        plt.show()
-    else:
-        Z = zs
-        X, Y = np.meshgrid(xs, ys)
-        #fig, ax = plt.subplots()
-        im = ax.imshow(Z)
-        ax.contour(Z, colors='black')
-        fig.colorbar(im, ax=ax)
-        plt.show()
-   
+    #     im = ax.imshow(z, extent=(x.min(), x.max(), y.min(), y.max()))
+    #     ax.contour(z, colors='black')
+    #     fig.colorbar(im, ax=ax)
+    #     plt.show()
+    # else:
+    #     Z = zs
+    #     X, Y = np.meshgrid(xs, ys)
+    #     #fig, ax = plt.subplots()
+    #     im = ax.imshow(Z)
+    #     ax.contour(Z, colors='black')
+    #     fig.colorbar(im, ax=ax)
+    #     plt.show()
+
     # print(X.shape)
     # print(Z.shape)
 
