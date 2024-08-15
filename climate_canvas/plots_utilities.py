@@ -11,11 +11,11 @@ def plot_response_surface(xs, ys, zs,
     '''Plot response surface from climate impact data.'''
     fig, ax = plt.subplots(figsize=(10, 10))
     if interpolate: # and
-        xs, ys, zs = evenly_space(xs, ys, zs, None, (100, 100))
+        xs, ys, zs = evenly_space(xs, ys, zs, None, (25, 25))
     extent = (xs.min(), xs.max(), ys.min(), ys.max())
-    im = ax.imshow(zs, extent=extent, aspect='auto')
+    im = ax.imshow(zs, extent=extent, aspect='auto', cmap='RdYlBu')
     # todo: contour lines are rotated, this has happened to others.
-    ax.contour(zs, extent=extent, colors='black')
+    ax.contour(zs, extent=extent, origin='image', colors='black')
     fig.colorbar(im, ax=ax)
     ax.set_xlim(xs.min(), xs.max())
     ax.set_ylim(ys.min(), ys.max())
