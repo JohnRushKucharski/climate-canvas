@@ -36,7 +36,7 @@ Next run:
 poetry install
 ``
 
-This will create a python virtual environment containing all the required climate-canvas dependencies, with affecting the global python environment.
+This will create a python virtual environment containing all the required climate-canvas dependencies, without affecting your system's global python environment.
 
 The climate-canvas program should be ready for use as either a python package or command line utility. To test the command line interface (CLI) type the following command into your shell:
 
