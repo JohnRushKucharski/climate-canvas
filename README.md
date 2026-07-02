@@ -4,7 +4,7 @@ Python package and command line interface (CLI) for plotting climate impact stud
 
 ![plot](./img/complex_interp.png)
 
-Example: The figure above is created by running the ``python climate_canvas response examples\complex_surface.csv --interp`` climate-canvas CLI command on the *complex_surface.csv* data distributed with the climate-canvas program.
+Example: The figure above is created by running the ``uv run climate-canvas response examples\complex_surface.csv --interp`` climate-canvas CLI command on the *complex_surface.csv* data distributed with the climate-canvas program.
 
 ## Installation Instructions
 
@@ -18,13 +18,13 @@ The climate-canvas source code can be found here: https://github.com/JohnRushKuc
 It can be cloned or forked by following the normal cloning or forking instructions, which are available here: https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository and here: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo.
 
 
-#### Installation with Poetry
+#### Installation with uv
 
-climate-canvas is developed with Poetry, which can be used to simply the installation process.
+climate-canvas is developed with [uv](https://docs.astral.sh/uv/), which can be used to simplify the installation process.
 
-To install Poetry, follow the instructions here: https://python-poetry.org/docs/.
+To install uv, follow the instructions here: https://docs.astral.sh/uv/getting-started/installation/.
 
-Once Poetry is installed, use your favorite shell to go to the location of the local climate-canvas repository, e.g.
+Once uv is installed, use your favorite shell to go to the location of the local climate-canvas repository, e.g.
 
 ``
 cd <PATH_TO_LOCAL>\climate-canvas
@@ -33,15 +33,15 @@ cd <PATH_TO_LOCAL>\climate-canvas
 Next run:
 
 ``
-poetry install
+uv sync --group test
 ``
 
-This will create a python virtual environment containing all the required climate-canvas dependencies, without affecting your system's global python environment.
+This will create a python virtual environment (``.venv``) containing all the required climate-canvas dependencies, without affecting your system's global python environment.
 
 The climate-canvas program should be ready for use as either a python package or command line utility. To test the command line interface (CLI) type the following command into your shell:
 
 ``
-poetry run python climate_canvas
+uv run climate-canvas --help
 ``
 
 This should return help instructions for the climate-canvas CLI.
@@ -59,7 +59,7 @@ The current version (0.1.0) only supports 2D climate response surface style plot
 The example above is created **response** command. From a shell run:
 
 ``
-python climate_canvas response --help
+uv run climate-canvas response --help
 ``
 
 To view help for the **response** command, i.e.:
@@ -69,15 +69,33 @@ To view help for the **response** command, i.e.:
 As the response help document describes the **response** command requires that a path to a *.csv* file containing plotting data be specified. Two example, data files are provided in the repository's *examples/* directory. The following command, using on of these example files, reproduces the figure above:
 
 ``
-python climate_canvas response examples\scenario_data.csv
+uv run climate-canvas response examples\scenario_data.csv
 ``
 
 The *--interp* flag can be used to bi-linearly interpolate between z-axis values. For example, running the following command (using the same data from the figure above) with the *--interp* flag produces the figure below:
 
 ``
-python climate_canvas response examples\scenario_data.csv --interp
+uv run climate-canvas response examples\scenario_data.csv --interp
 ``
 
 ![plot](./img/exscenario_interp.png)
 
 As the help documentation shows titles for the figure, x, y, and z axes can be added as optional arguments.
+
+#### Python API
+
+`plot_response_surface` (in `climate_canvas.plots_utilities`) can also be called directly as a
+library function, e.g. from another package's CLI. It accepts two optional parameters not
+exposed by the `response` CLI command:
+
+- `save_path` (`Path | None`, default `None`): when provided, saves the figure to this path.
+- `show` (`bool`, default `True`): when `False`, skips the interactive `plt.show()` window
+  (useful for batch/headless plotting, e.g. saving one plot per component in a loop). The
+  figure is always closed after the call to avoid leaking matplotlib figures.
+
+```python
+from climate_canvas.plots_utilities import plot_response_surface
+
+plot_response_surface(xs, ys, zs, save_path='surface.png', show=False)
+```
+

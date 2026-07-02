@@ -218,3 +218,6 @@ Backup[ ]of[ ]*.numbers/
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+skills/
+multiple_response_surfaces/
