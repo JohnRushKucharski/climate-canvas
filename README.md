@@ -93,9 +93,13 @@ exposed by the `response` CLI command:
   (useful for batch/headless plotting, e.g. saving one plot per component in a loop). The
   figure is always closed after the call to avoid leaking matplotlib figures.
 
+The third element of the `labels` tuple (z label) is rendered as the colorbar's label, in
+addition to `labels[0]`/`labels[1]` being used as the x/y axis labels.
+
 ```python
 from climate_canvas.plots_utilities import plot_response_surface
 
-plot_response_surface(xs, ys, zs, save_path='surface.png', show=False)
+plot_response_surface(xs, ys, zs, labels=('Precip Delta (%)', 'Temp Delta (C)', 'portion'),
+                      save_path='surface.png', show=False)
 ```
 

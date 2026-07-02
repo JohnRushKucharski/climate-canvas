@@ -22,7 +22,8 @@ def plot_response_surface(xs, ys, zs,
     im = ax.imshow(zs, extent=extent, aspect='auto', cmap='RdYlBu', origin='lower')
     # todo: contour lines are rotated, this has happened to others.
     ax.contour(zs, extent=extent, origin='lower', colors='black')
-    fig.colorbar(im, ax=ax)
+    cbar = fig.colorbar(im, ax=ax)
+    cbar.set_label(labels[2])
     ax.set_xlim(xs.min(), xs.max())
     ax.set_ylim(ys.min(), ys.max())
     ax.set_xlabel(labels[0])

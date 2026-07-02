@@ -77,3 +77,23 @@ def test_plot_response_surface_orients_rows_with_ys_ascending_bottom_to_top(monk
     plot_response_surface(xs, ys, zs, show=False)
 
     assert captured['origin'] == 'lower'
+
+
+def test_plot_response_surface_labels_colorbar_with_zlabel(monkeypatch):
+    '''labels[2] (z label) is rendered as the colorbar's label.'''
+    xs = np.array([0.0, 0.5, 1.0])
+    ys = np.array([0.0, 1.0])
+    zs = np.array([[2.0, 1.9, 1.0], [5.0, 4.5, 4.0]])
+    captured = {}
+    original_colorbar = plt.Figure.colorbar
+
+    def capturing_colorbar(self, *args, **kwargs):
+        cbar = original_colorbar(self, *args, **kwargs)
+        captured['cbar'] = cbar
+        return cbar
+
+    monkeypatch.setattr(plt.Figure, 'colorbar', capturing_colorbar)
+
+    plot_response_surface(xs, ys, zs, labels=('x', 'y', 'portion'), show=False)
+
+    assert captured['cbar'].ax.get_ylabel() == 'portion'
