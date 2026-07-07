@@ -16,16 +16,23 @@ def plot_response_surface(xs, ys, zs,
                           ) -> None:
     '''Plot response surface from climate impact data.'''
     fig, ax = plt.subplots(figsize=(10, 10))
+    xticks, yticks = xs, ys  # original (possibly irregular) knot values, before interpolation resamples them
     if interpolate: # and
         xs, ys, zs = evenly_space(xs, ys, zs, None, (25, 25))
-    extent = (xs.min(), xs.max(), ys.min(), ys.max())
-    im = ax.imshow(zs, extent=extent, aspect='auto', cmap='RdYlBu', origin='lower')
-    # todo: contour lines are rotated, this has happened to others.
-    ax.contour(zs, extent=extent, origin='lower', colors='black')
+    # pcolormesh/contour take xs/ys directly, honoring irregular spacing
+    # (imshow+extent would stretch xs/ys as if they were evenly spaced).
+    im = ax.pcolormesh(xs, ys, zs, shading='nearest', cmap='RdYlBu')
+    ax.contour(xs, ys, zs, colors='black')
+    ax.set_aspect('auto')
     cbar = fig.colorbar(im, ax=ax)
     cbar.set_label(labels[2])
-    ax.set_xlim(xs.min(), xs.max())
-    ax.set_ylim(ys.min(), ys.max())
+    # autoscale to the mesh's full cell extent (nearest-shading pads edge cells
+    # symmetrically beyond xs/ys min/max) instead of clipping at xs/ys min/max,
+    # which would cut edge-cell pixels in half (quarter at corners).
+    ax.autoscale(enable=True, tight=True)
+    ax.set_xticks(xticks)
+    ax.set_yticks(yticks)
+    ax.grid(which='major', linestyle='--', color='gray', alpha=0.6)
     ax.set_xlabel(labels[0])
     ax.set_ylabel(labels[1])
     ax.set_title(title)
@@ -43,28 +50,29 @@ def plot_response_surfaces(paths: list[str], axis_labels: tuple[str, str, str] =
     groups = group_paths(paths)
     keys_sorted = sorted(groups.keys())
     fig, axs = plt.subplots(1, ncols=len(groups), figsize=(10*len(groups), 10))
+    im = None
     for i, k in enumerate(keys_sorted):
-        fig, axs[i] = surface_subplot(fig, axs[i], read_data(groups[k]),
+        fig, axs[i], im = surface_subplot(fig, axs[i], read_data(groups[k]),
                                   axis_labels, subplot_labels[i],
                                   interpolate, color_map, threshold = None)
     fig.subplots_adjust(right=0.98)
     cbar_ax = fig.add_axes([0.99, 0.11, 0.02, 0.77])
-    fig.colorbar(axs[0].images[0], cax=cbar_ax)
+    fig.colorbar(im, cax=cbar_ax)
     plt.show()
 
 def surface_subplot(fig, ax, data: tuple[np.ndarray, np.ndarray, np.ndarray],
                     axis_labels: tuple[str, str, str], subplot_label: str,
-                    interpolate: bool, color_map: str, threshold: float) -> tuple[plt.Figure, plt.Axes]:
+                    interpolate: bool, color_map: str, threshold: float) -> tuple[plt.Figure, plt.Axes, object]:
     '''Plot a single response surface subplot.'''
     x, y, z = data
     if interpolate:
         x, y, z = evenly_space(x, y, z, None, (25, 25))
-    extent = (x.min(), x.max(), y.min(), y.max())
-    ax.imshow(z, extent=extent, aspect='auto', cmap=color_map,
-              vmin=-0.5, vmax=1.5)
-    ax.contour(z, extent=extent, origin='image', colors='black')
+    im = ax.pcolormesh(x, y, z, shading='nearest', cmap=color_map,
+                       vmin=-0.5, vmax=1.5)
+    ax.contour(x, y, z, colors='black')
+    ax.set_aspect('auto')
     ax.title.set_text(subplot_label)
-    return fig, ax
+    return fig, ax, im
 
 def group_paths(paths: list[str]) -> dict[str, Path]:
     '''Validate path.'''

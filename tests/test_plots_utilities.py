@@ -58,25 +58,29 @@ def test_plot_response_surface_closes_figure_after_call():
 
 
 def test_plot_response_surface_orients_rows_with_ys_ascending_bottom_to_top(monkeypatch):
-    '''zs[0] (smallest y) must be plotted at the bottom of the image, matching the
-    y-axis (extent bottom = ys.min()). imshow defaults to origin='upper', which would
-    place zs[0] at the top instead -- a y-axis flip bug. origin='lower' is required.
+    '''zs[0] (smallest y) must be plotted at ys[0] and zs[-1] at ys[-1], matching the
+    actual y coordinates supplied (not a normalized/evenly-spaced index). pcolormesh
+    is passed the real xs/ys arrays, so row order is preserved without needing an
+    origin flip like imshow required.
     '''
     xs = np.array([0.0, 0.5, 1.0])
     ys = np.array([0.0, 1.0])
     zs = np.array([[2.0, 1.9, 1.0], [5.0, 4.5, 4.0]])
     captured = {}
-    original_imshow = plt.Axes.imshow
+    original_pcolormesh = plt.Axes.pcolormesh
 
-    def capturing_imshow(self, *args, **kwargs):
-        captured['origin'] = kwargs.get('origin')
-        return original_imshow(self, *args, **kwargs)
+    def capturing_pcolormesh(self, *args, **kwargs):
+        captured.setdefault('args', args)  # keep only the first call (the surface itself)
+        return original_pcolormesh(self, *args, **kwargs)
 
-    monkeypatch.setattr(plt.Axes, 'imshow', capturing_imshow)
+    monkeypatch.setattr(plt.Axes, 'pcolormesh', capturing_pcolormesh)
 
     plot_response_surface(xs, ys, zs, show=False)
 
-    assert captured['origin'] == 'lower'
+    captured_xs, captured_ys, captured_zs = captured['args']
+    assert np.array_equal(captured_xs, xs)
+    assert np.array_equal(captured_ys, ys)
+    assert np.array_equal(captured_zs, zs)
 
 
 def test_plot_response_surface_labels_colorbar_with_zlabel(monkeypatch):

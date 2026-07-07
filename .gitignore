@@ -221,3 +221,7 @@ Backup[ ]of[ ]*.numbers/
 
 skills/
 multiple_response_surfaces/
+*.code-workspace
+
+great_lakes/
+multiple_response_surfaces/

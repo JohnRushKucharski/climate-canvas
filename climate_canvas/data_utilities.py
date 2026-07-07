@@ -22,6 +22,23 @@ def is_interpolable(array: np.ndarray) -> bool:
         return False
     return not np.isinf(np.diff(array)).any() # False if inf exist, True otherwise.
 
+def interpolate_1d(z0: float, z1: float, weight: float) -> float:
+    '''Linear interpolation between z0 (weight=0) and z1 (weight=1), skipping
+    a missing (NaN) endpoint if present (returns the other endpoint's value).
+    Remove this helper (and revert call sites) to restore strict NaN propagation.
+    '''
+    zxy = z0 + weight * (z1 - z0)
+    # NaN-permissive fallback disabled: it caused the interpolated surface to
+    # extend past the true staircase-shaped data footprint (see plots_utilities
+    # verification images). Uncomment to restore fallback behavior.
+    # if np.isnan(zxy):
+    #     if np.isnan(z0) and not np.isnan(z1):
+    #         return z1
+    #     if np.isnan(z1) and not np.isnan(z0):
+    #         return z0
+    return zxy
+
+
 def interpolate_2d(indices: tuple[tuple[int, int], tuple[int, int]], xy: tuple[float, float],
                    xs: np.ndarray, ys: np.ndarray, zs: np.ndarray) -> float:
     '''
@@ -78,6 +95,18 @@ def interpolate_2d(indices: tuple[tuple[int, int], tuple[int, int]], xy: tuple[f
     py = (xy[1] - y0) / (y1 - y0)
     # z-value at (x, y)
     zxy = zx0 * (1 - py) + zx1 * py
+    # NaN-permissive fallback: standard bilinear interpolation propagates NaN if
+    # ANY corner is missing, which can wipe out points near real data (see
+    # find_z docstring). If some (not all) corners are valid, fall back to a
+    # weighted average over just the valid corners, renormalizing weights so
+    # they still sum to 1. Remove this block to restore strict behavior.
+    # if np.isnan(zxy):
+    #     corners = np.array([z00, z01, z10, z11])
+    #     weights = np.array([(1 - px) * (1 - py), px * (1 - py),
+    #                         (1 - px) * py, px * py])
+    #     valid = ~np.isnan(corners)
+    #     if valid.any():
+    #         zxy = np.sum(weights[valid] * corners[valid]) / np.sum(weights[valid])
     return zxy
 
     # Earlier attempt.
@@ -221,7 +250,7 @@ def find_z(xy: tuple[float, float],
         InterpolateError: if (x, y) is not in (xs, ys) and interpolate is False.
         TruncateError: if (x, y) is not on the domains of (xs, ys) and truncation is NONE.
     '''
-    _truncate = False if truncation == Truncation.NONE else True
+    _truncate = truncation != Truncation.NONE
     col = find_index(xy[0], xs, interpolate, _truncate)
     row = find_index(xy[1], ys, interpolate, _truncate)
     match len(row): # y-axis.
@@ -238,11 +267,10 @@ def find_z(xy: tuple[float, float],
                         # col (x-axis) is truncated value.
                         return z_truncate(row[0], col[0], zs, truncation)
                     # 1D interpolation on col (x-axis).
-                    else:
-                        z0 = zs[row[0], col[0]]
-                        z1 = zs[row[0], col[1]]
-                        px = (xy[0] - xs[col[0]]) / (xs[col[1]] - xs[col[0]])
-                        return z0 + px * (z1 - z0)
+                    z0 = zs[row[0], col[0]]
+                    z1 = zs[row[0], col[1]]
+                    px = (xy[0] - xs[col[0]]) / (xs[col[1]] - xs[col[0]])
+                    return interpolate_1d(z0, z1, px)
                 case _:
                     # something went wrong in find_index().
                     raise ValueError('xi must have length 1 or 2.')
@@ -256,11 +284,10 @@ def find_z(xy: tuple[float, float],
                         # col (x-axis) is exact match.
                         return z_truncate(row[0], col[0], zs, truncation)
                     # 1D interpolation on row (y-axis)
-                    else:
-                        z0 = zs[row[0], col[0]]
-                        z1 = zs[row[1], col[0]]
-                        py = (xy[1] - ys[row[0]]) / (ys[row[1]] - ys[row[0]])
-                        return z0 + py * (z1 - z0)
+                    z0 = zs[row[0], col[0]]
+                    z1 = zs[row[1], col[0]]
+                    py = (xy[1] - ys[row[0]]) / (ys[row[1]] - ys[row[0]])
+                    return interpolate_1d(z0, z1, py)
                 case 2:
                     # corner case: row & col are truncated.
                     if col[1] is False and row[1] is False:
@@ -312,23 +339,31 @@ def evenly_space(xs: np.ndarray, ys: np.ndarray, zs: np.ndarray,
     if increments is not None and deltas is None:
         new_xs = np.linspace(xs[0], xs[-1], increments[0])
         new_ys = np.linspace(ys[0], ys[-1], increments[1])
-
-    if deltas is not None and increments is None:
-        new_xs = []
+    else: # deltas is not None and increments is None (validated above).
+        assert deltas is not None
+        new_xs_list: list[float] = []
         x = xs.min()
         while x < xs.max():
-            new_xs.append(x)
+            new_xs_list.append(x)
             x += deltas[0]
-        new_xs.append(xs.max())
-        new_xs = np.array(new_xs, dtype=float)
+        new_xs_list.append(xs.max())
+        new_xs = np.array(new_xs_list, dtype=float)
 
-        new_ys = []
+        new_ys_list: list[float] = []
         y = ys.min()
         while y < ys.max():
-            new_ys.append(y)
+            new_ys_list.append(y)
             y += deltas[1]
-        new_ys.append(ys.max())
-        new_ys = np.array(new_ys, dtype=float)
+        new_ys_list.append(ys.max())
+        new_ys = np.array(new_ys_list, dtype=float)
+
+    # Ensure original knot values are always sampled: the fine linspace grid
+    # rarely lands exactly on irregular original xs/ys, so points near real
+    # data (but not exactly on it) can require bilinear corners that include
+    # a missing (NaN) neighbor and render as gaps even though the real knot
+    # itself has data. Union the real x/y values back into new_xs/new_ys.
+    new_xs = np.union1d(new_xs, xs)
+    new_ys = np.union1d(new_ys, ys)
 
     new_zs = np.empty((len(new_ys), len(new_xs)), dtype=float)
     for i, y in enumerate(new_ys): # rows

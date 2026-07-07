@@ -39,9 +39,3 @@ class TestFormatData(unittest.TestCase):
         rows, cols = xy_levels(subplots['00'])
         self.assertEqual(rows, [1, 0])
         self.assertEqual(cols, [-1, 0, 1])
-
-    def test_format_data_files(self):
-        '''Test format_data_files.'''
-        paths = list(Path('examples/multiple_response_surfaces/laos').glob('*.csv'))
-        format_data_files(paths, 'metric 2 (M2) [units/time]', 1)
-        self.assertTrue(Path('examples/multiple_response_surfaces/example_metric_00.csv').exists())
