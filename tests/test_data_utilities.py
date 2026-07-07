@@ -6,7 +6,7 @@ import numpy as np
 from climate_canvas.data_utilities import (is_ascending, is_descending,
                                            is_interpolable, interpolate_2d,
                                            find_index, TruncateError, InterpolateError, Truncation,
-                                           find_z, evenly_space)
+                                           find_z, evenly_space, check_threshold, contour_levels)
 
 class TestData(unittest.TestCase):
     #region is_ascending tests.
@@ -333,4 +333,38 @@ class TestData(unittest.TestCase):
         self.assertTrue(np.allclose(y, np.array([4, 4.5, 5])))
         self.assertTrue(np.allclose(
             z, np.array([[0, 0, 0, 0, 0], [0, 0, 0, 0.25, 0.50], [0, 0, 0, 0.50, 1]])))
+    #endregion
+
+    #region check_threshold tests.
+    def test_check_threshold_returns_midpoint_when_none(self):
+        '''Test check_threshold function.'''
+        self.assertEqual(check_threshold(None, (0, 1)), 0.5)
+    def test_check_threshold_returns_threshold_when_in_range(self):
+        '''Test check_threshold function.'''
+        self.assertEqual(check_threshold(0.2, (0, 1)), 0.2)
+    def test_check_threshold_returns_midpoint_when_out_of_range(self):
+        '''Test check_threshold function.'''
+        self.assertEqual(check_threshold(5, (0, 1)), 0.5)
+    def test_check_threshold_returns_midpoint_when_equal_to_bound(self):
+        '''Test check_threshold function.'''
+        self.assertEqual(check_threshold(0, (0, 1)), 0.5)
+        self.assertEqual(check_threshold(1, (0, 1)), 0.5)
+    #endregion
+
+    #region contour_levels tests.
+    def test_contour_levels_returns_11_levels_centered_on_threshold(self):
+        '''Test contour_levels function.'''
+        levels, widths = contour_levels((0, 1), 0.5)
+        self.assertEqual(len(levels), 11)
+        self.assertEqual(len(widths), 11)
+        self.assertEqual(levels[5], 0.5)
+        self.assertEqual(widths[5], 2.0)
+        self.assertTrue(all(w == 1.0 for i, w in enumerate(widths) if i != 5))
+    def test_contour_levels_splits_asymmetrically_around_threshold(self):
+        '''Test contour_levels function.'''
+        levels, _ = contour_levels((0, 1), 0.2)
+        self.assertTrue(all(level < 0.2 for level in levels[:5]))
+        self.assertTrue(all(level > 0.2 for level in levels[6:]))
+        self.assertAlmostEqual(levels[0], 0.2 / 6)
+        self.assertAlmostEqual(levels[-1], 0.2 + 5 * (1 - 0.2) / 6)
     #endregion

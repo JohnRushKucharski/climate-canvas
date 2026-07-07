@@ -82,16 +82,29 @@ uv run climate-canvas response examples\scenario_data.csv --interp
 
 As the help documentation shows titles for the figure, x, y, and z axes can be added as optional arguments.
 
+The *--threshold* option sets the z-value that becomes the colormap's center (yellow) color, splitting
+the color range asymmetrically around it (and adjusting the contour levels to match). If omitted, it
+defaults to the midpoint of the data's z-value range. Use *--color-map-ticks* to set explicit colorbar
+tick values, e.g.:
+
+``
+uv run climate-canvas response examples\scenario_data.csv --threshold 0.2
+``
+
 #### Python API
 
 `plot_response_surface` (in `climate_canvas.plots_utilities`) can also be called directly as a
-library function, e.g. from another package's CLI. It accepts two optional parameters not
+library function, e.g. from another package's CLI. It accepts several optional parameters not
 exposed by the `response` CLI command:
 
 - `save_path` (`Path | None`, default `None`): when provided, saves the figure to this path.
 - `show` (`bool`, default `True`): when `False`, skips the interactive `plt.show()` window
   (useful for batch/headless plotting, e.g. saving one plot per component in a loop). The
   figure is always closed after the call to avoid leaking matplotlib figures.
+- `threshold` (`float | None`, default `None`): z-value that becomes the colormap's center color.
+  Defaults to the midpoint of the z-value range if `None` or outside that range.
+- `color_map` (`str`, default `'RdYlBu'`): matplotlib colormap name.
+- `color_map_ticks` (`list[float] | None`, default `None`): explicit colorbar tick values.
 
 The third element of the `labels` tuple (z label) is rendered as the colorbar's label, in
 addition to `labels[0]`/`labels[1]` being used as the x/y axis labels.
@@ -100,6 +113,6 @@ addition to `labels[0]`/`labels[1]` being used as the x/y axis labels.
 from climate_canvas.plots_utilities import plot_response_surface
 
 plot_response_surface(xs, ys, zs, labels=('Precip Delta (%)', 'Temp Delta (C)', 'portion'),
-                      save_path='surface.png', show=False)
+                      save_path='surface.png', show=False, threshold=0.2)
 ```
 

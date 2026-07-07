@@ -34,3 +34,7 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["climate_canvas"]
+
+[[tool.mypy.overrides]]
+module = "pandas.*"
+ignore_missing_imports = true

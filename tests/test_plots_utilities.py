@@ -2,10 +2,10 @@
 import matplotlib
 matplotlib.use('Agg')  # non-interactive backend; avoids blocking/opening windows in tests.
 
-import numpy as np
-from matplotlib import pyplot as plt
+import numpy as np  # noqa: E402 pylint: disable=wrong-import-position
+from matplotlib import pyplot as plt  # pylint: disable=wrong-import-position
 
-from climate_canvas.plots_utilities import plot_response_surface
+from climate_canvas.plots_utilities import plot_response_surface  # pylint: disable=wrong-import-position
 
 
 def test_plot_response_surface_writes_file_when_save_path_given(tmp_path):
@@ -30,7 +30,7 @@ def test_plot_response_surface_does_not_show_when_show_false(tmp_path, monkeypat
 
     plot_response_surface(xs, ys, zs, save_path=tmp_path / 'plot.png', show=False)
 
-    assert calls == []
+    assert not calls
 
 
 def test_plot_response_surface_shows_by_default(monkeypatch):
@@ -101,3 +101,63 @@ def test_plot_response_surface_labels_colorbar_with_zlabel(monkeypatch):
     plot_response_surface(xs, ys, zs, labels=('x', 'y', 'portion'), show=False)
 
     assert captured['cbar'].ax.get_ylabel() == 'portion'
+
+
+def test_plot_response_surface_threshold_centers_norm_at_threshold(monkeypatch):
+    '''threshold sets pcolormesh's TwoSlopeNorm vcenter (colormap midpoint value).'''
+    xs = np.array([0.0, 0.5, 1.0])
+    ys = np.array([0.0, 1.0])
+    zs = np.array([[0.0, 0.1, 0.5], [0.8, 0.9, 1.0]])
+    captured = {}
+    original_pcolormesh = plt.Axes.pcolormesh
+
+    def capturing_pcolormesh(self, *args, **kwargs):
+        captured.setdefault('norm', kwargs.get('norm'))
+        return original_pcolormesh(self, *args, **kwargs)
+
+    monkeypatch.setattr(plt.Axes, 'pcolormesh', capturing_pcolormesh)
+
+    plot_response_surface(xs, ys, zs, show=False, threshold=0.2)
+
+    assert captured['norm'].vcenter == 0.2
+    assert captured['norm'].vmin == 0.0
+    assert captured['norm'].vmax == 1.0
+
+
+def test_plot_response_surface_threshold_defaults_to_midpoint(monkeypatch):
+    '''threshold=None defaults the norm's vcenter to the midpoint of the z-range.'''
+    xs = np.array([0.0, 0.5, 1.0])
+    ys = np.array([0.0, 1.0])
+    zs = np.array([[0.0, 0.1, 0.5], [0.8, 0.9, 1.0]])
+    captured = {}
+    original_pcolormesh = plt.Axes.pcolormesh
+
+    def capturing_pcolormesh(self, *args, **kwargs):
+        captured.setdefault('norm', kwargs.get('norm'))
+        return original_pcolormesh(self, *args, **kwargs)
+
+    monkeypatch.setattr(plt.Axes, 'pcolormesh', capturing_pcolormesh)
+
+    plot_response_surface(xs, ys, zs, show=False)
+
+    assert captured['norm'].vcenter == 0.5
+
+
+def test_plot_response_surface_color_map_ticks_sets_colorbar_ticks(monkeypatch):
+    '''color_map_ticks, when provided, are applied to the colorbar.'''
+    xs = np.array([0.0, 0.5, 1.0])
+    ys = np.array([0.0, 1.0])
+    zs = np.array([[0.0, 0.1, 0.5], [0.8, 0.9, 1.0]])
+    captured = {}
+    original_colorbar = plt.Figure.colorbar
+
+    def capturing_colorbar(self, *args, **kwargs):
+        cbar = original_colorbar(self, *args, **kwargs)
+        captured['cbar'] = cbar
+        return cbar
+
+    monkeypatch.setattr(plt.Figure, 'colorbar', capturing_colorbar)
+
+    plot_response_surface(xs, ys, zs, show=False, color_map_ticks=[0.0, 0.5, 1.0])
+
+    assert list(captured['cbar'].get_ticks()) == [0.0, 0.5, 1.0]

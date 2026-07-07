@@ -4,6 +4,23 @@ from typing import Callable
 
 import numpy as np
 
+def check_threshold(threshold: float | None, z_range: tuple[float, float]) -> float:
+    '''Return threshold if within z_range, else default to z_range's midpoint.'''
+    if threshold is not None and z_range[0] < threshold < z_range[1]:
+        return threshold
+    return (z_range[0] + z_range[1]) / 2
+
+
+def contour_levels(z_range: tuple[float, float],
+                    threshold: float) -> tuple[tuple[float, ...], tuple[float, ...]]:
+    '''Generate contour levels/linewidths split below/above threshold.'''
+    lo = [z_range[0] + i * (threshold - z_range[0]) / 6 for i in range(1, 6)]
+    hi = [threshold + i * (z_range[1] - threshold) / 6 for i in range(1, 6)]
+    levels = lo + [threshold] + hi
+    widths = [1.0] * len(lo) + [2.0] + [1.0] * len(hi)
+    return tuple(levels), tuple(widths)
+
+
 def is_ascending(array: np.ndarray) -> bool:
     '''Check if array is sorted in ascending order.'''
     return bool(np.all(array[:-1] <= array[1:]))
