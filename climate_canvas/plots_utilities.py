@@ -16,7 +16,7 @@ def plot_response_surface(xs, ys, zs,
                           save_path: Path | None = None,
                           show: bool = True,
                           threshold: float | None = None,
-                          color_map: str = 'RdYlBu',
+                          color_map: str = 'RdBu',
                           color_map_ticks: list[float] | None = None
                           ) -> None:
     '''Plot response surface from climate impact data.

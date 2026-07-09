@@ -84,11 +84,11 @@ As the help documentation shows titles for the figure, x, y, and z axes can be a
 
 The *--threshold* option sets the z-value that becomes the colormap's center (yellow) color, splitting
 the color range asymmetrically around it (and adjusting the contour levels to match). If omitted, it
-defaults to the midpoint of the data's z-value range. Use *--color-map-ticks* to set explicit colorbar
-tick values, e.g.:
+defaults to the midpoint of the data's z-value range. Use *--color-map* to change the matplotlib
+colormap (defaults to *RdBu*), and *--color-map-ticks* to set explicit colorbar tick values, e.g.:
 
 ``
-uv run climate-canvas response examples\scenario_data.csv --threshold 0.2
+uv run climate-canvas response examples\scenario_data.csv --threshold 0.2 --color-map RdYlBu
 ``
 
 #### Python API
@@ -103,7 +103,7 @@ exposed by the `response` CLI command:
   figure is always closed after the call to avoid leaking matplotlib figures.
 - `threshold` (`float | None`, default `None`): z-value that becomes the colormap's center color.
   Defaults to the midpoint of the z-value range if `None` or outside that range.
-- `color_map` (`str`, default `'RdYlBu'`): matplotlib colormap name.
+- `color_map` (`str`, default `'RdBu'`): matplotlib colormap name.
 - `color_map_ticks` (`list[float] | None`, default `None`): explicit colorbar tick values.
 
 The third element of the `labels` tuple (z label) is rendered as the colorbar's label, in

@@ -21,6 +21,7 @@ def response(data: str = typer.Argument(..., help='Path to csv file.'),
              zlabel: str = typer.Option('z', help='Label for z-axis.'),
              threshold: float | None = typer.Option(
                  None, help='Z-value centered on the colormap (defaults to midpoint of z-range).'),
+             color_map: str = typer.Option('RdBu', help='Matplotlib colormap name.'),
              color_map_ticks: list[float] | None = typer.Option(
                  None, help='Explicit colorbar tick values.')):
     '''Plot response surface from climate impact data in csv file. In the form: \n
@@ -42,4 +43,4 @@ def response(data: str = typer.Argument(..., help='Path to csv file.'),
     x = np.array(df.columns.values[1:], dtype=float)
 
     plot_response_surface(x, y, z, interpolate, (xlabel, ylabel, zlabel), title,
-                          threshold=threshold, color_map_ticks=color_map_ticks)
+                          threshold=threshold, color_map=color_map, color_map_ticks=color_map_ticks)
